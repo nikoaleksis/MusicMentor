@@ -1,5 +1,5 @@
 import Fretboard from "./components/Fretboard";
-import { E_STANDARD_GUITAR_TUNING } from "./constants/guitarTunings";
+import { E_STANDARD_GUITAR_TUNING } from "./music/guitarTunings";
 
 function App() {
 

@@ -1,6 +1,6 @@
 import Fret from "./Fret";
 import StringComponent from "./StringComponent";
-import { Note, circularNoteCollector } from "../constants/Note";
+import { Note, circularNoteCollector } from "../music/Note";
 import { RosewoodPattern, roseWoodFill } from "./RosewoodPattern";
 import NoteComponent from "./NoteComponent";
 import { useEffect, useState } from "react";

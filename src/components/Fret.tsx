@@ -1,4 +1,4 @@
-import { Note } from "../constants/Note";
+import { Note } from "../music/Note";
 
 type FretProps = {
   xPosition: number;

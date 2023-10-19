@@ -1,4 +1,4 @@
-import { Note } from "../constants/Note";
+import { Note } from "../music/Note";
 
 type NoteProp = {
     pitch: Note;

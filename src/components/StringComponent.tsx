@@ -1,4 +1,4 @@
-import { Note } from "../constants/Note";
+import { Note } from "../music/Note";
 import NoteComponent from "./NoteComponent";
 import styles from "./StringComponent.module.css";
 

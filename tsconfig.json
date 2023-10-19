@@ -22,5 +22,5 @@
   },
   "include": [
     "src"
-, "__tests__/audio"  ]
+, "__tests__"  ]
 }
