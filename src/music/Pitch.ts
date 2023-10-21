@@ -4,11 +4,24 @@ import { Note, noteFromString } from "./Note";
 export class Pitch {
   readonly note: Note;
   readonly frequency: number;
+  static readonly FREQUENCY_TOLERANCE = 2;
 
   constructor(note: Note, frequency: number) {
       this.note = note;
       this.frequency = frequency;
       Object.freeze(this);
+  }
+
+  public isFrequencyEqual(otherFrequency: number): boolean {
+    if (otherFrequency === this.frequency) {
+      return true;
+    }
+
+    if (Math.abs(otherFrequency - this.frequency) <= Pitch.FREQUENCY_TOLERANCE) {
+      return true;
+    }
+
+    return false;
   }
 
   static generateFollowingPitches(

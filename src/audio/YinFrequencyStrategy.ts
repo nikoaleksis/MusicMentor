@@ -12,7 +12,7 @@ export class YinFrequencyStrategy implements FrequencyCalculatorStrategy {
   calculateFrequency(audioContext: AudioContext, analyserNode: AnalyserNode): number {
     // Amount of frequencies
     const bufferLength = analyserNode.frequencyBinCount;
-    console.log("BUFFER LENGTH: " + bufferLength);
+
     // Represents the sound wave form
     const timeDomainData = new Float32Array(bufferLength);
     // Populate the array
@@ -25,18 +25,14 @@ export class YinFrequencyStrategy implements FrequencyCalculatorStrategy {
     const cumulativeMeanNormalizedDifference = this.getCumulativeMeanNormalizedDifference(difference);
 
     const lag = this.getlagFromMinimumDifference(cumulativeMeanNormalizedDifference);
-    console.log("LAG: " + lag);
 
     //Ignoring betterLag for now to first get original lag to be more precise
     const betterLag = this.refineLagUsingParabolicInterpolation(lag, cumulativeMeanNormalizedDifference);
-    console.log("Better lag: " + betterLag);
 
     const sampleRate = audioContext.sampleRate;
-    console.log("SAMPLE RATE: " + sampleRate);
     
     // The result: the detected pitch in Hertz
     const frequency = sampleRate / betterLag;
-    console.log("FREQUENCY: " + frequency + "Hz");
 
     return frequency;
   }

@@ -7,7 +7,7 @@ function App() {
     <div className="App">
       {       
       <Fretboard
-        stringNotes={ E_STANDARD_GUITAR_TUNING }
+        stringPitches={ E_STANDARD_GUITAR_TUNING }
         amountOfFrets={12}
         height={ 250 }
         width={ 1000 }

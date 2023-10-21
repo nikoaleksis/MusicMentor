@@ -16,15 +16,12 @@ export class AudioProcessor {
   }
 
   calculateFrequency(audioContext: AudioContext, analyserNode: AnalyserNode): number | undefined {
-    if (!audioContext) {
-      throw new MissingAudioContextError("The provided AudioContext is missing or invalid.");
-    } 
+    if (!audioContext) throw new MissingAudioContextError("The provided AudioContext is missing or invalid.");
 
-    if (!analyserNode) {
-      throw new MissingAnalyserNodeError("The provided AnalyserNode is missing or invalid.");
-    }
+    if (!analyserNode) throw new MissingAnalyserNodeError("The provided AnalyserNode is missing or invalid.");
 
     const amplitude = this.calculateAmplitude(analyserNode);
+
     if (amplitude < 1) return undefined;
     
     return this.frequencyStrategy.calculateFrequency(audioContext, analyserNode);

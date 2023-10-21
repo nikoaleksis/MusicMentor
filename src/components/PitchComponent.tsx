@@ -1,21 +1,22 @@
-import { Note } from "../music/Note";
+import { Pitch } from "../music/Pitch";
 
-type NoteProp = {
-    pitch: Note;
+type PitchProp = {
+    pitch: Pitch;
     xPosition: number;
     yPosition: number;
+    currentFrequency: number;
 }
 
-function NoteComponent(props: NoteProp) {
+function PitchComponent(props: PitchProp) {
     return (
     <>
         <circle
           cx={props.xPosition}
           cy={props.yPosition}
           r="20"
-          fill="white"
+          fill={ props.pitch.isFrequencyEqual(props.currentFrequency) ? "green" : "white" }
           stroke="black"
-          strokeWidth="3"
+          strokeWidth={1}
         />
         <text
           x={props.xPosition}
@@ -24,10 +25,10 @@ function NoteComponent(props: NoteProp) {
           textAnchor="middle"
           fill="#333"
           >
-            {props.pitch}
+            {props.pitch.note}
         </text>
     </>
     );
 }
 
-export default NoteComponent;
+export default PitchComponent;

@@ -1,27 +1,72 @@
 import Fret from "./Fret";
 import StringComponent from "./StringComponent";
-import { Note, circularNoteCollector } from "../music/Note";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { RosewoodPattern, roseWoodFill } from "./RosewoodPattern";
-import NoteComponent from "./NoteComponent";
-import { useEffect, useState } from "react";
+import PitchComponent from "./PitchComponent";
+import { Pitch } from "../music/Pitch";
+import { YinFrequencyStrategy } from "../audio/YinFrequencyStrategy";
+import { RMSAmplitudeStrategy } from "../audio/RMSAmplitudeStrategy";
+import { AudioProcessor } from "../audio/AudioProcessor";
 
 type FretboardProps = {
-  stringNotes: Note[];
+  stringPitches: Pitch[];
   amountOfFrets: number;
   height: number;
   width:number;
 };
 
+const frequencyStrategy = new YinFrequencyStrategy();
+const amplitudeStrategy = new RMSAmplitudeStrategy();
+const audioProcessor = new AudioProcessor(frequencyStrategy, amplitudeStrategy);
 
-function Fretboard(props: FretboardProps) {  
+function Fretboard(props: FretboardProps) { 
+  const analyser = useRef<AnalyserNode | null>(null);
+  const audioContext = useRef<AudioContext | null>(null);
+  const mediaStreamSource = useRef<MediaStreamAudioSourceNode | null>(null);
+  const [currentFrequency, setCurrentFrequency] = useState<number>(0);
+  const [isInitialized, setIsInitialized] = useState<boolean>(false); 
   const firstFretHorizontalPosition = 50;
   const firstStringVerticalPosition = 5;
+
+  const initializeAudioResources = useCallback(async () => {
+    const microphone = await requestMicrophone();
+
+    if (!microphone) return;
+
+    audioContext.current = audioContext.current || new AudioContext();
+    mediaStreamSource.current = mediaStreamSource.current || audioContext.current.createMediaStreamSource(microphone);
+    analyser.current = analyser.current || audioContext.current.createAnalyser();
+    analyser.current.fftSize = 2048;
+    mediaStreamSource.current.connect(analyser.current);
+
+    setIsInitialized(true);
+  }, []);
+
+  useEffect(() => {
+    initializeAudioResources();
+  }, [initializeAudioResources]);
+
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    const updateAudioData = function() {
+      if (analyser.current && audioContext.current) {
+        const frequency = audioProcessor.calculateFrequency(audioContext.current, analyser.current) ?? 0;
+
+        setCurrentFrequency(frequency);
+        console.log(frequency + "Hz");
+      requestAnimationFrame(updateAudioData)
+    }
+    }
+
+    requestAnimationFrame(updateAudioData);
+  }, [isInitialized]);
 
   const availableHorizontalSpace = props.width - firstFretHorizontalPosition;
   const availableVerticalSpace = props.height - (firstStringVerticalPosition * 2);
   
   const spaceBetweenFrets = availableHorizontalSpace / (props.amountOfFrets);
-  const nrOfSpacesBetweenStrings = props.stringNotes.length - 1;
+  const nrOfSpacesBetweenStrings = props.stringPitches.length - 1;
   // Todo: Magic number 3 refers to height of string rect element used for correct bottom margin from fretboard to string
   const spaceBetweenStrings = (availableVerticalSpace - 3) / nrOfSpacesBetweenStrings;
 
@@ -36,112 +81,82 @@ function Fretboard(props: FretboardProps) {
 
         { createFrets(props.amountOfFrets, props.height, spaceBetweenFrets, firstFretHorizontalPosition) }
 
-        { createStrings(props.stringNotes, spaceBetweenStrings, firstStringVerticalPosition) }
-
-        { createNotes(
-          props.stringNotes,
-          props.amountOfFrets,
-          firstStringVerticalPosition,
+        { createStrings(
+          props.stringPitches,
           spaceBetweenStrings,
+          firstStringVerticalPosition,
+          currentFrequency,
           firstFretHorizontalPosition,
+          props.amountOfFrets,
           spaceBetweenFrets
-          ) 
+          )
         }
-
-
       </svg>
     </>
-    );
-  }
+  );
+}
   
-  function createFrets(amount: number, height: number, spaceBetweenFrets: number, xAxis: number) {
+function createFrets(amount: number, height: number, spaceBetweenFrets: number, xAxis: number) { 
+  return Array.from({length: amount}, (_, index) => {
+    const x = xAxis;
   
-    return Array.from({length: amount}, (_, index) => {
-      const x = xAxis;
+    const fretComp = 
+      <Fret
+        xPosition={x}
+        yPosition={0}
+        height={height}
+        width={5}
+      />
   
-      const fretComp = 
-        <Fret
-          xPosition={x}
-          yPosition={0}
-          height={height}
-          width={5}
-        />
+    xAxis += spaceBetweenFrets;
   
-      xAxis += spaceBetweenFrets;
+    return fretComp;
+  });
+}
   
-      return fretComp;
-    });
-  }
-  
-  function createStrings(stringNotes: Note[], spaceBetweenStrings: number, yAxis: number): React.ReactElement[] {
-  
-    return stringNotes.map((note, index) => {
-      const y = yAxis;
+function createStrings(
+  stringPitches: Pitch[],
+  spaceBetweenStrings: number,
+  yAxis: number,
+  currentFrequency: number,
+  firstFretHorizontalPosition: number,
+  amountOfFrets: number,
+  spaceBetweenFrets: number
+  ): React.ReactElement[] 
+{
+  return stringPitches.map((pitch, index) => {
+    const y = yAxis;
       
-      const stringComp = 
-        <StringComponent
-          key={ index }
-          xPosition={ 0 }
-          yPosition={ y }
-          note={ note }
-        />;
+    const stringComp = 
+      <StringComponent
+        key={ index }
+        xPosition={ 0 }
+        yPosition={ y }
+        pitch={ pitch }
+        currentFrequency={ currentFrequency }
+        firstFretHorizontalPosition={ firstFretHorizontalPosition }
+        amountOfFrets={ amountOfFrets }
+        spaceBetweenFrets={ spaceBetweenFrets }
+      />;
 
-      yAxis += spaceBetweenStrings;
+    yAxis += spaceBetweenStrings;
   
-      return stringComp;
-    });
-  }
+    return stringComp;
+  });
+}
+
+async function requestMicrophone(): Promise<MediaStream>  {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true})
   
-  function createNotes(stringNotes: Note[], amountOfFrets: number, firstStringPos: number, spaceBetweenStrings: number, firstFretPos: number, spaceBetweenFrets: number): React.ReactElement[] {
-    let yPosition = firstStringPos;
-
-    // We go through each string on the fretboard
-    const noteComponents = stringNotes.flatMap((note: Note) => {
-        
-        // Collect all the notes for this string
-        const collectedNotes: Note[] = circularNoteCollector(note, 12);
-        
-        // Position the note between the frets
-        let xPosition = firstFretPos + (spaceBetweenFrets / 2);
-
-        // Go through all the collected notes and place them on the fretboard
-        const notesForSpecificString = collectedNotes.map((note: Note) => {
-          const noteComponent = <NoteComponent
-              pitch={ note }
-              xPosition={ xPosition }
-              yPosition={ yPosition }
-          />
-          
-          xPosition+= spaceBetweenFrets;
-            
-          return noteComponent;
-        });
-
-        yPosition += spaceBetweenStrings;
-
-        return notesForSpecificString;
-    });
-
-    return noteComponents;
+    return stream;
+  } catch(error) {
+    console.error("ERROR " + error);
+  
+    alert("You need to grant access to microphone to use this application");
+  
+    return Promise.reject();
   }
+}
 
 export default Fretboard;
-          /*const audioContext = new AudioContext();
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          const sourceNode = audioContext.createMediaStreamSource(stream);
-          const analyserNode = audioContext.createAnalyser();
-          sourceNode.connect(analyserNode);
-          analyserNode.connect(audioContext.destination);
-        
-          const bufferLength = analyserNode.frequencyBinCount;
-          const dataArray = new Uint8Array(bufferLength);
-        
-          function update() {
-            analyserNode.getByteFrequencyData(dataArray);
-            setAudioData(Array.from(dataArray));
-            requestAnimationFrame(update);
-        
-            console.log(audioData);
-          }
-        
-          update();*/

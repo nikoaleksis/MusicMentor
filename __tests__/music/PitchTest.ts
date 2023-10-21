@@ -20,4 +20,69 @@ describe("Tests for Pitch class", () => {
     // Then
     expect(result).toEqual(expected);
   });
+
+  test("If other frequency is equal to pitch frequency isFrequencyEqual returns true", () => {
+    // Given
+    const otherFrequency = 82.41;
+    const pitch = new Pitch(Note.E, 82.41);
+    
+    // When
+    const isFrequencyEqual = pitch.isFrequencyEqual(otherFrequency);
+
+    // Then
+    expect(isFrequencyEqual).toBeTruthy();
+  });
+
+  test("If other frequency is lower to pitch frequency but within tolerance isFrequencyEqual returns true", () => {
+    // Given
+    const targetFrequency = 82.41;
+    const otherFrequency = targetFrequency - Pitch.FREQUENCY_TOLERANCE;
+    const pitch = new Pitch(Note.E, targetFrequency);
+    
+    // When
+    const isFrequencyEqual = pitch.isFrequencyEqual(otherFrequency);
+
+    // Then
+    expect(isFrequencyEqual).toBeTruthy();
+  });
+
+  test("If other frequency is lower than tolerance to pitch frequency isFrequencyEqual returns false", () => {
+    // Given
+    const targetFrequency = 82.41;
+    const otherFrequency = targetFrequency - Pitch.FREQUENCY_TOLERANCE - 1;
+    const pitch = new Pitch(Note.E, targetFrequency);
+    
+    // When
+    const isFrequencyEqual = pitch.isFrequencyEqual(otherFrequency);
+
+    // Then
+    expect(isFrequencyEqual).toBeFalsy();
+  });
+
+  
+  test("If other frequency is higher to pitch frequency but within tolerance isFrequencyEqual returns true", () => {
+    // Given
+    const targetFrequency = 82.41;
+    const otherFrequency = targetFrequency + Pitch.FREQUENCY_TOLERANCE;
+    const pitch = new Pitch(Note.E, targetFrequency);
+    
+    // When
+    const isFrequencyEqual = pitch.isFrequencyEqual(otherFrequency);
+
+    // Then
+    expect(isFrequencyEqual).toBeTruthy();
+  });
+
+  test("If other frequency is higher than tolerance to pitch frequency isFrequencyEqual returns false", () => {
+    // Given
+    const targetFrequency = 82.41;
+    const otherFrequency = targetFrequency + Pitch.FREQUENCY_TOLERANCE + 1;
+    const pitch = new Pitch(Note.E, targetFrequency);
+    
+    // When
+    const isFrequencyEqual = pitch.isFrequencyEqual(otherFrequency);
+
+    // Then
+    expect(isFrequencyEqual).toBeFalsy();
+  });
 });
